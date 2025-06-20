@@ -1,0 +1,6 @@
+services:
+  # Redis removed - now using Redis Cloud
+  # Qdrant removed - now using Qdrant Cloud
+  # All services are now cloud-based!
+  
+  # You can add other services here if needed (e.g., nginx for reverse proxy)
