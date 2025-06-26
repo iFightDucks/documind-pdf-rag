@@ -2,7 +2,6 @@
 name = "documind-server"
 version = "0.1.0"
 description = "DOCUMIND PDF RAG Server - Python Backend"
-readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     # Web Framework
