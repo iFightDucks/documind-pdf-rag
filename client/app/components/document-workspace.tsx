@@ -28,6 +28,14 @@ interface Document {
   fileUrl?: string;
 }
 
+interface Message {
+  id: string;
+  type: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  sources?: string[];
+}
+
 interface DocumentWorkspaceProps {
   documents: Document[];
   selectedDocument: Document | null;
@@ -44,9 +52,42 @@ export default function DocumentWorkspace({
   const [activeTab, setActiveTab] = useState("viewer");
   const [showSidebar, setShowSidebar] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Lift chat state up to preserve messages across tab switches
+  const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const [documentChatHistory, setDocumentChatHistory] = useState<Record<string, Message[]>>({});
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  // Handle document selection - restore chat history for the selected document
+  const handleDocumentSelectWithChat = (doc: Document) => {
+    // Save current chat messages for the previously selected document
+    if (selectedDocument?.id) {
+      setDocumentChatHistory(prev => ({
+        ...prev,
+        [selectedDocument.id]: chatMessages
+      }));
+    }
+    
+    // Load chat history for the newly selected document
+    const savedMessages = documentChatHistory[doc.id] || [];
+    setChatMessages(savedMessages);
+    
+    // Call the original handler
+    onDocumentSelect(doc);
+  };
+
+  // Update chat messages and save to document history
+  const updateChatMessages = (messages: Message[]) => {
+    setChatMessages(messages);
+    if (selectedDocument?.id) {
+      setDocumentChatHistory(prev => ({
+        ...prev,
+        [selectedDocument.id]: messages
+      }));
+    }
   };
 
   return (
@@ -178,7 +219,7 @@ export default function DocumentWorkspace({
                   <Sidebar
                     onUploadClick={onUploadClick}
                     documents={documents}
-                    onDocumentSelect={onDocumentSelect}
+                    onDocumentSelect={handleDocumentSelectWithChat}
                     selectedDocument={selectedDocument}
                   />
                 </Panel>
@@ -222,6 +263,8 @@ export default function DocumentWorkspace({
                   <Chat
                     documentId={selectedDocument?.id}
                     isDocumentReady={selectedDocument?.status === 'ready'}
+                    messages={chatMessages}
+                    updateMessages={updateChatMessages}
                   />
                 </motion.div>
               </TabsContent>
@@ -252,6 +295,8 @@ export default function DocumentWorkspace({
                       <Chat
                         documentId={selectedDocument?.id}
                         isDocumentReady={selectedDocument?.status === 'ready'}
+                        messages={chatMessages}
+                        updateMessages={updateChatMessages}
                       />
                     </Panel>
                   </PanelGroup>

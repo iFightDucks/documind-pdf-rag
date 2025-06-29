@@ -23,10 +23,16 @@ interface Message {
 interface ChatProps {
   documentId?: string;
   isDocumentReady?: boolean;
+  messages?: Message[];
+  updateMessages?: (messages: Message[]) => void;
 }
 
-export default function Chat({ documentId, isDocumentReady = false }: ChatProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+export default function Chat({ 
+  documentId, 
+  isDocumentReady = false,
+  messages = [],
+  updateMessages 
+}: ChatProps) {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -55,7 +61,9 @@ export default function Chat({ documentId, isDocumentReady = false }: ChatProps)
       timestamp: new Date().toLocaleTimeString(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    updateMessages?.(newMessages);
+    
     const currentInput = inputValue.trim();
     setInputValue("");
     setIsLoading(true);
@@ -90,7 +98,8 @@ export default function Chat({ documentId, isDocumentReady = false }: ChatProps)
         sources: result.sources?.map((source: any) => source.page_number).filter(Boolean) || [],
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      const finalMessages = [...newMessages, assistantMessage];
+      updateMessages?.(finalMessages);
     } catch (error) {
       console.error("Chat error:", error);
       toast.error("Failed to send message. Please try again.");
@@ -102,7 +111,8 @@ export default function Chat({ documentId, isDocumentReady = false }: ChatProps)
         timestamp: new Date().toLocaleTimeString(),
       };
       
-      setMessages(prev => [...prev, errorMessage]);
+      const errorMessages = [...newMessages, errorMessage];
+      updateMessages?.(errorMessages);
     } finally {
       setIsLoading(false);
     }
